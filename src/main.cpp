@@ -10,9 +10,12 @@
 #include "artic/locator.h"
 
 #include <thorin/world.h>
-#include <thorin/be/c.h>
+#include <thorin/be/c/c.h>
 #ifdef ENABLE_LLVM
 #include <thorin/be/llvm/llvm.h>
+#endif
+#ifdef ENABLE_SPIRV
+#include <thorin/be/spirv/spirv.h>
 #endif
 
 using namespace artic;
@@ -323,11 +326,16 @@ int main(int argc, char** argv) {
             }
         };
         emit_to_file(backends.cpu_cg.get(),    ".ll");
-        emit_to_file(backends.cuda_cg.get(),   ".cu");
-        emit_to_file(backends.nvvm_cg.get(),   ".nvvm");
-        emit_to_file(backends.opencl_cg.get(), ".cl");
-        emit_to_file(backends.amdgpu_cg.get(), ".amdgpu");
-        emit_to_file(backends.hls_cg.get(),    ".hls");
+        const std::vector<std::pair<int, const char*>> backends_extensions = {
+        { thorin::Backends::CUDA      , ".cu"     },
+        { thorin::Backends::NVVM      , ".nvvm"   },
+        { thorin::Backends::OpenCL    , ".cl"     },
+        { thorin::Backends::AMDGPU    , ".amdgpu" },
+        { thorin::Backends::HLS       , ".hls"    },
+        { thorin::Backends::SpirV     , ".spv"    }
+        };
+        for (auto [backend, extension] : backends_extensions)
+            emit_to_file(backends.device_cgs[backend].get(), extension);
     }
 #endif
     return EXIT_SUCCESS;
